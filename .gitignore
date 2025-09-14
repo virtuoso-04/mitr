@@ -1,0 +1,12 @@
+# Root-level .gitignore
+node_modules/
+.DS_Store
+*.log
+.env*
+!.env.example
+
+# IDE
+.idea/
+.vscode/
+*.sublime-project
+*.sublime-workspace
