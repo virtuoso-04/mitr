@@ -49,7 +49,15 @@ app.use((req, res, next) => {
 
 // Routes
 app.get('/api/health', (req, res) => {
-  res.status(200).json({ status: 'ok', timestamp: new Date() });
+  res.status(200).json({ 
+    success: true,
+    message: 'Service is running',
+    data: {
+      status: 'ok',
+      environment: SERVER_CONFIG.nodeEnv,
+      timestamp: new Date()
+    }
+  });
 });
 
 app.use('/api/auth', authRoutes);
@@ -60,12 +68,20 @@ app.use('/api/crisis', authenticateJwt, crisisRoutes);
 // Error handling middleware
 app.use((err: Error, req: express.Request, res: express.Response, next: express.NextFunction) => {
   console.error('Error:', err);
-  res.status(500).json({ error: 'Internal Server Error' });
+  res.status(500).json({ 
+    success: false,
+    message: 'Internal Server Error',
+    error: SERVER_CONFIG.isDev ? err.message : undefined
+  });
 });
 
 // 404 handler
 app.use((req, res) => {
-  res.status(404).json({ error: 'Not Found' });
+  res.status(404).json({ 
+    success: false,
+    message: 'Not Found',
+    error: `Route ${req.method} ${req.originalUrl} not found`
+  });
 });
 
 // Set up socket handlers

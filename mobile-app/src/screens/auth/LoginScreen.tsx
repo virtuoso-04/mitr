@@ -33,7 +33,9 @@ const LoginScreen = () => {
       toast.show({
         title: "Missing information",
         description: "Please enter both email and password",
-        status: "warning",
+        placement: "top",
+        backgroundColor: "warning.500",
+        duration: 3000
       });
       return;
     }
@@ -46,7 +48,9 @@ const LoginScreen = () => {
       toast.show({
         title: "Login Failed",
         description: "Please check your credentials and try again",
-        status: "error",
+        placement: "top",
+        backgroundColor: "error.500",
+        duration: 3000
       });
     } finally {
       setIsLoading(false);

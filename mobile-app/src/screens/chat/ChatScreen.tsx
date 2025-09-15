@@ -12,11 +12,31 @@ import {
   Avatar, 
   Spinner, 
   useToast, 
-  Select
+  Select,
+  Collapse,
+  Divider,
+  Pressable
 } from 'native-base';
-import { Ionicons } from '@expo/vector-icons';
+import { Ionicons, MaterialIcons } from '@expo/vector-icons';
 import { useAuth } from '../../contexts/AuthContext';
-import { Message } from '../../types';
+// Temporary type definitions until we update the shared types
+interface GitaVerse {
+  sanskrit: string;
+  citation: string;
+  translation: string;
+  explanation?: string;
+}
+
+interface Message {
+  id: string;
+  text: string;
+  sender: 'user' | 'ai';
+  persona?: 'arjuna' | 'maya';
+  timestamp: Date;
+  isLoading?: boolean;
+  isCrisisResponse?: boolean;
+  gitaVerse?: GitaVerse;
+}
 
 // Mock AI personas
 const AI_PERSONAS = [
@@ -53,7 +73,7 @@ const ChatScreen = () => {
   const toast = useToast();
   const [messages, setMessages] = useState<Message[]>(INITIAL_MESSAGES);
   const [messageText, setMessageText] = useState('');
-  const [selectedPersona, setSelectedPersona] = useState('arjuna');
+  const [selectedPersona, setSelectedPersona] = useState<'arjuna' | 'maya'>('arjuna');
   const [isTyping, setIsTyping] = useState(false);
 
   // Helper function to check for crisis keywords
@@ -97,8 +117,10 @@ const ChatScreen = () => {
         toast.show({
           title: "Crisis Support",
           description: "We've activated crisis support resources",
-          status: "warning",
+          // Use the correct Native Base toast properties
+          placement: "top",
           duration: 5000,
+          backgroundColor: "warning.500"
         });
       }, 500);
       return;
@@ -120,18 +142,38 @@ const ChatScreen = () => {
     
     // Simulate AI response (would be a real API call in production)
     setTimeout(() => {
+      // Generate AI response and potential Gita verse
+      const aiResponseText = generateAIResponse(messageText, selectedPersona);
+      const messageId = (Date.now() + 2).toString();
+      
+      // Create response message
+      const responseMessage: Message = {
+        id: messageId,
+        text: aiResponseText,
+        sender: 'ai',
+        persona: selectedPersona,
+        timestamp: new Date(),
+        isLoading: false
+      };
+      
+      // Add Gita verse for spiritual topics when using Arjuna
+      if (selectedPersona === 'arjuna' && 
+         (messageText.toLowerCase().includes('purpose') || 
+          messageText.toLowerCase().includes('meaning') || 
+          messageText.toLowerCase().includes('dharma'))) {
+        responseMessage.gitaVerse = {
+          sanskrit: "कर्मण्येवाधिकारस्ते मा फलेषु कदाचन।\nमा कर्मफलहेतुर्भूर्मा ते सङ्गोऽस्त्वकर्मणि॥",
+          citation: "Bhagavad Gita Chapter 2, Verse 47",
+          translation: "You have a right to perform your prescribed duties, but you are not entitled to the fruits of your actions.",
+          explanation: "Focus on the present action without attachment to results to find inner peace."
+        };
+      }
+      
       // Remove typing indicator and add actual response
       setMessages(prevMessages => 
         prevMessages
           .filter(msg => msg.id !== typingMessageId)
-          .concat({
-            id: (Date.now() + 2).toString(),
-            text: generateAIResponse(messageText, selectedPersona),
-            sender: 'ai',
-            persona: selectedPersona,
-            timestamp: new Date(),
-            isLoading: false,
-          })
+          .concat(responseMessage)
       );
       setIsTyping(false);
     }, 1500);
@@ -167,6 +209,7 @@ const ChatScreen = () => {
   // Message renderer
   const renderMessage = ({ item }: { item: Message }) => {
     const isAI = item.sender === 'ai';
+    const [showGitaDetails, setShowGitaDetails] = useState(false);
     
     return (
       <Box
@@ -200,12 +243,60 @@ const ChatScreen = () => {
             <Text color="gray.400">Typing...</Text>
           </HStack>
         ) : (
-          <Text color={isAI ? 'darkText' : 'white'}>
-            {item.text}
-          </Text>
+          <>
+            <Text color={isAI ? 'darkText' : 'white'}>
+              {item.text}
+            </Text>
+            
+            {/* Gita Verse Section */}
+            {isAI && item.gitaVerse && (
+              <Box mt={2}>
+                <Pressable 
+                  onPress={() => setShowGitaDetails(!showGitaDetails)}
+                  bg="amber.50" 
+                  p={2} 
+                  rounded="md"
+                  borderWidth={1}
+                  borderColor="amber.200"
+                >
+                  <HStack justifyContent="space-between" alignItems="center">
+                    <Text color="amber.800" fontWeight="medium" fontSize="xs">
+                      {item.gitaVerse.citation}
+                    </Text>
+                    <Icon 
+                      as={MaterialIcons} 
+                      name={showGitaDetails ? "expand-less" : "expand-more"} 
+                      color="amber.800" 
+                      size="sm" 
+                    />
+                  </HStack>
+                  
+                  <Collapse isOpen={showGitaDetails}>
+                    <Box mt={2}>
+                      <Text fontFamily="serif" fontSize="xs" fontStyle="italic" color="amber.900">
+                        {item.gitaVerse.sanskrit}
+                      </Text>
+                      
+                      <Divider my={1} bg="amber.200" />
+                      
+                      <Text fontSize="sm" color="amber.900" fontWeight="medium">
+                        {item.gitaVerse.translation}
+                      </Text>
+                      
+                      {item.gitaVerse.explanation && (
+                        <Text fontSize="xs" color="gray.600" mt={1}>
+                          {item.gitaVerse.explanation}
+                        </Text>
+                      )}
+                    </Box>
+                  </Collapse>
+                </Pressable>
+              </Box>
+            )}
+          </>
         )}
         
-        <Text fontSize="xs" color={isAI ? 'gray.500' : 'white'} alignSelf="flex-end">
+        <Text fontSize="xs" color={isAI ? 'gray.500' : 'white'} alignSelf="flex-end" mt={1}>
           {item.timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
         </Text>
       </Box>
@@ -218,7 +309,7 @@ const ChatScreen = () => {
         {/* Persona selector */}
         <Select
           selectedValue={selectedPersona}
-          onValueChange={value => setSelectedPersona(value)}
+          onValueChange={value => setSelectedPersona(value as 'arjuna' | 'maya')}
           accessibilityLabel="Choose AI Guide"
           placeholder="Choose AI Guide"
           _selectedItem={{
@@ -235,13 +326,15 @@ const ChatScreen = () => {
         </Select>
         
         {/* Messages list */}
-        <FlatList
-          flex={1}
-          data={messages}
-          renderItem={renderMessage}
-          keyExtractor={item => item.id}
-          inverted={false}
-        />
+        <Box flex={1}>
+          <FlatList
+            style={{ flex: 1 }}
+            data={messages}
+            renderItem={renderMessage}
+            keyExtractor={item => item.id}
+            inverted={false}
+          />
+        </Box>
         
         {/* Message input */}
         <KeyboardAvoidingView
@@ -262,7 +355,7 @@ const ChatScreen = () => {
               InputRightElement={
                 isTyping ? (
                   <Spinner size="sm" mr="2" color="primary.500" />
-                ) : null
+                ) : undefined
               }
               onSubmitEditing={sendMessage}
             />

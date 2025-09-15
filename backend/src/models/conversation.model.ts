@@ -1,10 +1,18 @@
 import mongoose, { Document, Schema } from 'mongoose';
 
+export interface GitaVerseContent {
+  sanskrit: string;
+  citation: string;
+  translation: string;
+  explanation?: string;
+}
+
 export interface IMessage extends Document {
   text: string;
   sender: 'user' | 'ai';
   persona?: 'arjuna' | 'maya';
   isCrisisResponse?: boolean;
+  gitaVerse?: GitaVerseContent;
   createdAt: Date;
 }
 
@@ -37,6 +45,12 @@ const messageSchema = new Schema<IMessage>(
       type: Boolean,
       default: false,
     },
+    gitaVerse: {
+      sanskrit: String,
+      citation: String,
+      translation: String,
+      explanation: String
+    }
   },
   {
     timestamps: true,

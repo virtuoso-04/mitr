@@ -1,8 +1,13 @@
 import { Request, Response } from 'express';
-import jwt from 'jsonwebtoken';
+import jwt, { SignOptions } from 'jsonwebtoken';
 import { z } from 'zod';
 import User from '../models/user.model';
 import { JWT_CONFIG } from '../config';
+
+// Extended Request type with userId from auth middleware
+interface AuthRequest extends Request {
+  userId?: string;
+}
 
 // Validation schemas using Zod
 const registerSchema = z.object({
@@ -28,7 +33,8 @@ export const register = async (req: Request, res: Response) => {
     
     if (existingUser) {
       return res.status(409).json({
-        error: 'User already exists with that email or username',
+        success: false,
+        message: 'User already exists with that email or username',
       });
     }
     
@@ -46,30 +52,38 @@ export const register = async (req: Request, res: Response) => {
     const token = jwt.sign(
       { userId: user._id },
       JWT_CONFIG.secret,
-      { expiresIn: JWT_CONFIG.expiresIn }
+      { expiresIn: JWT_CONFIG.expiresIn } as SignOptions
     );
     
     // Return user info and token
     res.status(201).json({
+      success: true,
       message: 'User registered successfully',
-      user: {
-        id: user._id,
-        username: user.username,
-        email: user.email,
-      },
-      token,
+      data: {
+        user: {
+          id: user._id,
+          username: user.username,
+          email: user.email,
+        },
+        token
+      }
     });
   } catch (error: any) {
     // Handle validation errors
     if (error instanceof z.ZodError) {
       return res.status(400).json({
-        error: 'Validation failed',
-        details: error.errors,
+        success: false,
+        message: 'Validation failed',
+        errors: error.errors,
       });
     }
     
     console.error('Registration error:', error);
-    res.status(500).json({ error: 'Internal server error' });
+    res.status(500).json({ 
+      success: false,
+      message: 'Internal server error',
+      error: error.message || 'Unknown error occurred'
+    });
   }
 };
 
@@ -82,59 +96,84 @@ export const login = async (req: Request, res: Response) => {
     const user = await User.findOne({ email });
     
     if (!user) {
-      return res.status(401).json({ error: 'Invalid email or password' });
+      return res.status(401).json({ 
+        success: false,
+        message: 'Invalid email or password' 
+      });
     }
     
     // Validate password
     const isPasswordValid = await user.validatePassword(password);
     
     if (!isPasswordValid) {
-      return res.status(401).json({ error: 'Invalid email or password' });
+      return res.status(401).json({ 
+        success: false, 
+        message: 'Invalid email or password' 
+      });
     }
     
     // Generate JWT
     const token = jwt.sign(
       { userId: user._id },
       JWT_CONFIG.secret,
-      { expiresIn: JWT_CONFIG.expiresIn }
+      { expiresIn: JWT_CONFIG.expiresIn } as SignOptions
     );
     
     // Return user info and token
     res.status(200).json({
+      success: true,
       message: 'Login successful',
-      user: {
-        id: user._id,
-        username: user.username,
-        email: user.email,
-      },
-      token,
+      data: {
+        user: {
+          id: user._id,
+          username: user.username,
+          email: user.email,
+        },
+        token,
+      }
     });
   } catch (error: any) {
     // Handle validation errors
     if (error instanceof z.ZodError) {
       return res.status(400).json({
-        error: 'Validation failed',
-        details: error.errors,
+        success: false,
+        message: 'Validation failed',
+        errors: error.errors,
       });
     }
     
     console.error('Login error:', error);
-    res.status(500).json({ error: 'Internal server error' });
+    res.status(500).json({ 
+      success: false,
+      message: 'Internal server error',
+      error: error.message || 'Unknown error occurred'
+    });
   }
 };
 
-export const getProfile = async (req: Request, res: Response) => {
+export const getProfile = async (req: AuthRequest, res: Response) => {
   try {
     // Find user by ID (from JWT)
     const user = await User.findById(req.userId).select('-password');
     
     if (!user) {
-      return res.status(404).json({ error: 'User not found' });
+      return res.status(404).json({ 
+        success: false,
+        message: 'User not found' 
+      });
     }
     
-    res.status(200).json({ user });
-  } catch (error) {
+    res.status(200).json({ 
+      success: true,
+      message: 'User profile retrieved successfully',
+      data: { user }
+    });
+  } catch (error: any) {
     console.error('Get profile error:', error);
-    res.status(500).json({ error: 'Internal server error' });
+    res.status(500).json({ 
+      success: false,
+      message: 'Internal server error',
+      error: error.message || 'Unknown error occurred'
+    });
   }
 };

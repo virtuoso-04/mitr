@@ -4,6 +4,14 @@ import mongoose from 'mongoose';
 import Conversation from '../models/conversation.model';
 import aiService from '../services/ai.service';
 
+// Type definitions for improved type safety
+interface GitaVerseContent {
+  sanskrit: string;
+  citation: string;
+  translation: string;
+  explanation?: string;
+}
+
 // Validation schemas
 const sendMessageSchema = z.object({
   message: z.string().min(1).max(1000),
@@ -34,27 +42,29 @@ export const sendMessage = async (req: Request, res: Response) => {
     }
     
     // Add user message to conversation
-    conversation.messages.push({
+    const userMessageData = {
       text: message,
-      sender: 'user',
-      createdAt: new Date(),
-    });
+      sender: 'user' as const
+    };
+    conversation.messages.push(userMessageData as any);
     
     // Generate AI response
     let aiResponse;
+    let hasGitaVerse = false;
+    let gitaVerseData: GitaVerseContent | null = null;
     
     if (crisisCheck.isCrisis) {
       // Special handling for crisis situations
       aiResponse = "I notice you might be going through a difficult time. Remember that help is available, and you're not alone. Would you like me to connect you with a mental health professional or a crisis helpline? Your wellbeing is important.";
       
       // Add AI response to conversation with crisis flag
-      conversation.messages.push({
+      const crisisMessageData = {
         text: aiResponse,
-        sender: 'ai',
+        sender: 'ai' as const,
         persona,
-        isCrisisResponse: true,
-        createdAt: new Date(),
-      });
+        isCrisisResponse: true
+      };
+      conversation.messages.push(crisisMessageData as any);
       
       // TODO: In a production system, we might trigger additional actions here
       // such as notifications to mental health professionals
@@ -67,15 +77,45 @@ export const sendMessage = async (req: Request, res: Response) => {
           parts: msg.text,
         }));
       
-      aiResponse = await aiService.generateResponse(message, persona, chatHistory);
+      // Create initial values
+      let aiResponseObj = null;
+      let hasError = false;
       
-      // Add AI response to conversation
-      conversation.messages.push({
+      try {
+        aiResponseObj = await aiService.generateResponse(message, persona, chatHistory);
+        aiResponse = aiResponseObj.text;
+      } catch (aiError) {
+        console.error('AI Service error:', aiError);
+        // Provide fallback response in case of AI service failure
+        aiResponse = "I'm having trouble processing your request right now. Please try again in a moment.";
+        // Log detailed error for monitoring
+        console.error(`AI Error details: User ${req.userId}, Message: "${message}"`);
+        hasError = true;
+      }
+
+      // Create message data object
+      const messageData: Record<string, any> = {
         text: aiResponse,
-        sender: 'ai',
-        persona,
-        createdAt: new Date(),
-      });
+        sender: 'ai' as const,
+        persona
+      };
+      
+      // Add Gita verse if available and no errors occurred
+      if (!hasError && aiResponseObj && aiResponseObj.gitaVerse) {
+        hasGitaVerse = true;
+        gitaVerseData = {
+          sanskrit: aiResponseObj.gitaVerse.sanskrit,
+          citation: aiResponseObj.gitaVerse.citation,
+          translation: aiResponseObj.gitaVerse.translation
+        };
+        
+        if (aiResponseObj.gitaVerse.explanation) {
+          gitaVerseData.explanation = aiResponseObj.gitaVerse.explanation;
+        }
+        
+        messageData.gitaVerse = gitaVerseData;
+      }      // Add AI response to conversation
+      conversation.messages.push(messageData as any);
     }
     
     // Update last active timestamp
@@ -84,23 +124,40 @@ export const sendMessage = async (req: Request, res: Response) => {
     // Save conversation to database
     await conversation.save();
     
-    // Return the AI response
-    res.status(200).json({
-      response: aiResponse,
-      isCrisisResponse: crisisCheck.isCrisis,
-      crisisScore: crisisCheck.score,
-    });
+    // Prepare standardized response object
+    const responseData = {
+      success: true,
+      message: crisisCheck.isCrisis ? 'Crisis support activated' : 'Response generated successfully',
+      data: {
+        response: aiResponse,
+        isCrisisResponse: crisisCheck.isCrisis,
+        crisisScore: crisisCheck.score
+      }
+    };
+    
+    // Add Gita verse if available and not in crisis mode
+    if (!crisisCheck.isCrisis && hasGitaVerse && gitaVerseData) {
+      (responseData.data as any).gitaVerse = gitaVerseData;
+    }
+    
+    // Return the standardized response
+    res.status(200).json(responseData);
   } catch (error: any) {
     // Handle validation errors
     if (error instanceof z.ZodError) {
       return res.status(400).json({
-        error: 'Validation failed',
-        details: error.errors,
+        success: false,
+        message: 'Validation failed',
+        errors: error.errors,
       });
     }
     
     console.error('Error sending message:', error);
-    res.status(500).json({ error: 'Internal server error' });
+    res.status(500).json({ 
+      success: false,
+      message: 'Internal server error',
+      error: error.message || 'Unknown error occurred'
+    });
   }
 };
 
@@ -108,23 +165,38 @@ export const sendMessage = async (req: Request, res: Response) => {
 export const getConversationHistory = async (req: Request, res: Response) => {
   try {
     if (!req.userId) {
-      return res.status(401).json({ error: 'Authentication required' });
+      return res.status(401).json({ 
+        success: false,
+        message: 'Authentication required' 
+      });
     }
     
     // Get conversation history for the user
     const conversation = await Conversation.findOne({ userId: req.userId });
     
     if (!conversation) {
-      return res.status(200).json({ messages: [] });
+      return res.status(200).json({ 
+        success: true,
+        message: 'No conversation history found',
+        data: { messages: [] }
+      });
     }
     
     // Return conversation messages
     res.status(200).json({
-      messages: conversation.messages,
+      success: true,
+      message: 'Conversation history retrieved successfully',
+      data: {
+        messages: conversation.messages,
+      }
     });
-  } catch (error) {
+  } catch (error: any) {
     console.error('Error getting conversation history:', error);
-    res.status(500).json({ error: 'Internal server error' });
+    res.status(500).json({ 
+      success: false,
+      message: 'Internal server error',
+      error: error.message || 'Unknown error occurred'
+    });
   }
 };
 
@@ -144,9 +216,17 @@ export const getPersonas = async (_req: Request, res: Response) => {
       },
     ];
     
-    res.status(200).json({ personas });
-  } catch (error) {
+    res.status(200).json({
+      success: true,
+      message: 'Personas retrieved successfully',
+      data: { personas }
+    });
+  } catch (error: any) {
     console.error('Error getting personas:', error);
-    res.status(500).json({ error: 'Internal server error' });
+    res.status(500).json({
+      success: false,
+      message: 'Internal server error',
+      error: error.message || 'Unknown error occurred'
+    });
   }
 };

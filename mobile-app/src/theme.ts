@@ -1,4 +1,28 @@
 import { extendTheme } from 'native-base';
+import { Dimensions } from 'react-native';
+
+// Get device dimensions
+const { width, height } = Dimensions.get('window');
+
+// Device type detection
+const isSmallDevice = width < 375;
+const isIPhone14Plus = (width === 390 || width === 428) && (height === 844 || height === 926);
+const isTablet = width > 768;
+
+// Responsive theme utilities
+export const deviceUtils = {
+  isSmallDevice,
+  isIPhone14Plus,
+  isTablet,
+  width,
+  height,
+  // Responsive sizing helper
+  rs: (size: number, factor = 0.5) => {
+    return isSmallDevice ? size * (1 - factor * 0.2) : 
+           isTablet ? size * (1 + factor) : 
+           size;
+  }
+};
 
 const theme = extendTheme({
   colors: {

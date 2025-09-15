@@ -26,7 +26,7 @@ import { CommunityPost } from '../../types';
 const MOCK_POSTS: CommunityPost[] = [
   {
     id: '1',
-    content: 'I've been feeling really overwhelmed with college assignments lately. Any tips on managing academic stress?',
+    content: 'I\'ve been feeling really overwhelmed with college assignments lately. Any tips on managing academic stress?',
     authorId: 'anonymous',
     authorName: 'Anonymous',
     isAnonymous: true,
@@ -46,7 +46,7 @@ const MOCK_POSTS: CommunityPost[] = [
   },
   {
     id: '3',
-    content: 'Has anyone tried the breathing exercises in the Wellness section? I'm curious if they actually help with anxiety.',
+    content: 'Has anyone tried the breathing exercises in the Wellness section? I\'m curious if they actually help with anxiety.',
     authorId: 'user3',
     authorName: 'WellnessSeeker',
     isAnonymous: false,

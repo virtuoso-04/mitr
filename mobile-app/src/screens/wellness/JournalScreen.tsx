@@ -19,23 +19,31 @@ import {
   Badge,
 } from 'native-base';
 import { Ionicons } from '@expo/vector-icons';
-import { JournalEntry, MoodTracker } from '../../types';
+import { JournalEntry } from '../../types';
+
+// Define the MoodTracker interface since it's missing from types
+interface MoodTracker {
+  id: string;
+  userId: string;
+  mood: string;
+  timestamp: Date;
+}
 
 // Mock journal entries
 const MOCK_JOURNAL_ENTRIES: JournalEntry[] = [
   {
     id: '1',
-    userId: 'user123',
     content: 'I felt really good about my progress in therapy today. The breathing exercises are helping with my anxiety.',
-    mood: 'happy',
-    timestamp: new Date(2023, 5, 20),
+    mood: 4, // happy
+    tags: ['therapy', 'progress', 'anxiety'],
+    createdAt: new Date(2023, 5, 20),
   },
   {
     id: '2',
-    userId: 'user123',
     content: 'Today was challenging. I struggled with social anxiety at work, but I used the grounding techniques my therapist taught me.',
-    mood: 'anxious',
-    timestamp: new Date(2023, 5, 18),
+    mood: 2, // anxious
+    tags: ['challenge', 'anxiety', 'work', 'coping'],
+    createdAt: new Date(2023, 5, 18),
   },
 ];
 
@@ -48,6 +56,7 @@ const MOCK_MOOD_DATA: MoodTracker[] = [
   { id: '5', userId: 'user123', mood: 'anxious', timestamp: new Date(2023, 5, 16) },
   { id: '6', userId: 'user123', mood: 'calm', timestamp: new Date(2023, 5, 15) },
   { id: '7', userId: 'user123', mood: 'happy', timestamp: new Date(2023, 5, 14) },
+  { id: '8', userId: 'user123', mood: 'chatpata', timestamp: new Date(2023, 5, 13) },
 ];
 
 const JournalScreen = () => {
@@ -60,8 +69,34 @@ const JournalScreen = () => {
   // New journal entry
   const [newEntry, setNewEntry] = useState({
     content: '',
-    mood: 'neutral' as 'happy' | 'calm' | 'neutral' | 'sad' | 'anxious',
+    mood: 'neutral' as 'happy' | 'calm' | 'neutral' | 'sad' | 'anxious' | 'chatpata',
+    tags: [] as string[],
   });
+
+  // Map mood string to numeric value and vice versa
+  const moodToNumber = (moodString: string): number => {
+    switch(moodString) {
+      case 'chatpata': return 5;
+      case 'happy': return 4;
+      case 'calm': return 3;
+      case 'neutral': return 2;
+      case 'sad': return 1;
+      case 'anxious': return 0;
+      default: return 2;
+    }
+  };
+  
+  const numberToMood = (moodNumber: number): string => {
+    switch(moodNumber) {
+      case 5: return 'chatpata';
+      case 4: return 'happy';
+      case 3: return 'calm';
+      case 2: return 'neutral';
+      case 1: return 'sad';
+      case 0: return 'anxious';
+      default: return 'neutral';
+    }
+  };
 
   // Add journal entry
   const addJournalEntry = () => {
@@ -76,14 +111,14 @@ const JournalScreen = () => {
 
     const entry: JournalEntry = {
       id: `journal-${Date.now()}`,
-      userId: 'user123',
       content: newEntry.content,
-      mood: newEntry.mood,
-      timestamp: new Date(),
+      mood: moodToNumber(newEntry.mood),
+      tags: newEntry.tags,
+      createdAt: new Date(),
     };
 
     setJournalEntries([entry, ...journalEntries]);
-    setNewEntry({ content: '', mood: 'neutral' });
+    setNewEntry({ content: '', mood: 'neutral', tags: [] });
     setShowJournalModal(false);
     
     toast.show({
@@ -118,10 +153,11 @@ const JournalScreen = () => {
       year: 'numeric',
     });
   };
-
-  // Get emoji for mood
-  const getMoodEmoji = (mood: string) => {
-    switch (mood) {
+  const getMoodEmoji = (mood: string | number) => {
+    // Convert numeric mood to string if needed
+    const moodStr = typeof mood === 'number' ? numberToMood(mood) : mood;
+    
+    switch (moodStr) {
       case 'happy':
         return '😊';
       case 'calm':
@@ -132,14 +168,17 @@ const JournalScreen = () => {
         return '😔';
       case 'anxious':
         return '😰';
+      case 'chatpata':
+        return '😜';
       default:
         return '😐';
     }
   };
-
-  // Get color for mood
-  const getMoodColor = (mood: string) => {
-    switch (mood) {
+  const getMoodColor = (mood: string | number) => {
+    // Convert numeric mood to string if needed
+    const moodStr = typeof mood === 'number' ? numberToMood(mood) : mood;
+    
+    switch (moodStr) {
       case 'happy':
         return 'green.500';
       case 'calm':
@@ -150,6 +189,8 @@ const JournalScreen = () => {
         return 'purple.500';
       case 'anxious':
         return 'amber.500';
+      case 'chatpata':
+        return 'orange.500';
       default:
         return 'gray.500';
     }
@@ -224,10 +265,10 @@ const JournalScreen = () => {
                         <Badge colorScheme={getMoodColor(entry.mood)} variant="subtle">
                           <HStack space={1} alignItems="center">
                             <Text>{getMoodEmoji(entry.mood)}</Text>
-                            <Text fontSize="xs" textTransform="capitalize">{entry.mood}</Text>
+                            <Text fontSize="xs" textTransform="capitalize">{typeof entry.mood === 'number' ? numberToMood(entry.mood) : entry.mood}</Text>
                           </HStack>
                         </Badge>
-                        <Text fontSize="xs" color="gray.500">{formatDate(new Date(entry.timestamp))}</Text>
+                        <Text fontSize="xs" color="gray.500">{formatDate(new Date(entry.createdAt))}</Text>
                       </HStack>
                       <Text numberOfLines={3} fontSize="sm">
                         {entry.content}
@@ -317,6 +358,7 @@ const JournalScreen = () => {
                 <Select.Item label="Neutral 😐" value="neutral" />
                 <Select.Item label="Sad 😔" value="sad" />
                 <Select.Item label="Anxious 😰" value="anxious" />
+                <Select.Item label="Chatpata 😜" value="chatpata" />
               </Select>
             </FormControl>
             <FormControl mt={3}>
@@ -379,6 +421,12 @@ const JournalScreen = () => {
                 <VStack alignItems="center" space={1}>
                   <Text fontSize="3xl">😰</Text>
                   <Text>Anxious</Text>
+                </VStack>
+              </Pressable>
+               <Pressable onPress={() => addMoodEntry('anxious')}>
+                <VStack alignItems="center" space={1}>
+                  <Text fontSize="3xl">🤪</Text>
+                  <Text>Chatpata</Text>
                 </VStack>
               </Pressable>
             </HStack>

@@ -26,10 +26,17 @@ export const authenticateJwt = (req: Request, res: Response, next: NextFunction)
 
   try {
     // Verify token
-    const decoded = jwt.verify(token, JWT_CONFIG.secret) as { userId: string };
-    req.userId = decoded.userId;
-    next();
-  } catch (error) {
+    const decoded = jwt.verify(token, JWT_CONFIG.secret);
+    
+    // Check if decoded has the expected structure
+    if (typeof decoded === 'object' && decoded !== null && 'userId' in decoded) {
+      req.userId = (decoded as { userId: string }).userId;
+      next();
+    } else {
+      throw new Error('Invalid token structure');
+    }
+  } catch (error: any) {
+    console.error('Token verification error:', error.message);
     res.status(401).json({ error: 'Invalid or expired token' });
   }
 };
