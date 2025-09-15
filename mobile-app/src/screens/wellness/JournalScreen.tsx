@@ -56,7 +56,6 @@ const MOCK_MOOD_DATA: MoodTracker[] = [
   { id: '5', userId: 'user123', mood: 'anxious', timestamp: new Date(2023, 5, 16) },
   { id: '6', userId: 'user123', mood: 'calm', timestamp: new Date(2023, 5, 15) },
   { id: '7', userId: 'user123', mood: 'happy', timestamp: new Date(2023, 5, 14) },
-  { id: '8', userId: 'user123', mood: 'chatpata', timestamp: new Date(2023, 5, 13) },
 ];
 
 const JournalScreen = () => {
@@ -69,14 +68,13 @@ const JournalScreen = () => {
   // New journal entry
   const [newEntry, setNewEntry] = useState({
     content: '',
-    mood: 'neutral' as 'happy' | 'calm' | 'neutral' | 'sad' | 'anxious' | 'chatpata',
+    mood: 'neutral' as 'happy' | 'calm' | 'neutral' | 'sad' | 'anxious',
     tags: [] as string[],
   });
 
   // Map mood string to numeric value and vice versa
   const moodToNumber = (moodString: string): number => {
     switch(moodString) {
-      case 'chatpata': return 5;
       case 'happy': return 4;
       case 'calm': return 3;
       case 'neutral': return 2;
@@ -88,7 +86,6 @@ const JournalScreen = () => {
   
   const numberToMood = (moodNumber: number): string => {
     switch(moodNumber) {
-      case 5: return 'chatpata';
       case 4: return 'happy';
       case 3: return 'calm';
       case 2: return 'neutral';
@@ -189,8 +186,6 @@ const JournalScreen = () => {
         return 'purple.500';
       case 'anxious':
         return 'amber.500';
-      case 'chatpata':
-        return 'orange.500';
       default:
         return 'gray.500';
     }
@@ -358,7 +353,6 @@ const JournalScreen = () => {
                 <Select.Item label="Neutral 😐" value="neutral" />
                 <Select.Item label="Sad 😔" value="sad" />
                 <Select.Item label="Anxious 😰" value="anxious" />
-                <Select.Item label="Chatpata 😜" value="chatpata" />
               </Select>
             </FormControl>
             <FormControl mt={3}>
@@ -421,12 +415,6 @@ const JournalScreen = () => {
                 <VStack alignItems="center" space={1}>
                   <Text fontSize="3xl">😰</Text>
                   <Text>Anxious</Text>
-                </VStack>
-              </Pressable>
-               <Pressable onPress={() => addMoodEntry('anxious')}>
-                <VStack alignItems="center" space={1}>
-                  <Text fontSize="3xl">🤪</Text>
-                  <Text>Chatpata</Text>
                 </VStack>
               </Pressable>
             </HStack>
