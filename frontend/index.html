@@ -1,0 +1,165 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>MindSpace</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <a class="skip-link" href="#main">Skip to content</a>
+  <header class="topbar">
+    <div class="brand-wrap">
+      <span class="brand-logo" aria-hidden="true">
+        <svg viewBox="0 0 64 64" width="22" height="22" focusable="false" aria-hidden="true">
+          <path fill="#22d3ee" opacity=".9" d="M32 10c5 8 5 12 0 20-5-8-5-12 0-20z"/>
+          <path fill="#7dd3fc" opacity=".8" d="M22 16c6 5 8 9 10 14-8-1-12-4-10-14z"/>
+          <path fill="#7dd3fc" opacity=".8" d="M42 16c-6 5-8 9-10 14 8-1 12-4 10-14z"/>
+        </svg>
+      </span>
+      <h1 class="brand">MindSpace</h1>
+    </div>
+    <nav aria-label="Primary">
+      <a href="#" id="nav-chat" class="active" role="link">Chat</a>
+      <a href="#" id="nav-tools" role="link">Wellness Tools</a>
+      <a href="#" id="nav-community" role="link">Community</a>
+      <a href="#" id="nav-wrap" role="link">Wellness Wrap</a>
+    </nav>
+    <div class="topbar-right">
+      <div id="auth-status" class="auth">Not signed in</div>
+      <button id="btn-google" class="secondary" aria-label="Sign in with Google">Sign in</button>
+      <button id="btn-signout" class="secondary" aria-label="Sign out" hidden>Sign out</button>
+      <button id="open-settings" class="secondary" aria-haspopup="dialog" aria-controls="settings-dialog">Settings</button>
+    </div>
+  </header>
+
+  <main id="main" class="container">
+    <section id="view-chat" class="view" aria-labelledby="chat-title">
+      <h2 id="chat-title" class="sr-only">Supportive Chat</h2>
+      <section class="personas" role="group" aria-label="Choose persona">
+        <button data-persona="arjuna" class="persona active" aria-pressed="true">Arjuna</button>
+        <button data-persona="maya" class="persona" aria-pressed="false">Maya</button>
+      </section>
+
+      <section id="crisis" class="crisis hidden" aria-live="assertive"></section>
+
+      <section class="chat card" aria-label="Conversation">
+        <ul id="messages" class="messages" role="log" aria-live="polite" aria-relevant="additions"></ul>
+        <form id="chat-form" class="composer" aria-label="Message composer">
+          <label for="message" class="sr-only">Your message</label>
+          <textarea id="message" rows="2" autocomplete="off" placeholder="Share what's on your mind... (Shift+Enter for newline)"></textarea>
+          <button id="send" type="submit" aria-label="Send message">Send</button>
+        </form>
+      </section>
+
+      <section class="mood card" aria-labelledby="mood-title">
+        <h3 id="mood-title">Mood check-in</h3>
+        <div class="mood-row" role="radiogroup" aria-label="Select your mood">
+          <button class="mood-btn" role="radio" aria-checked="false" data-mood="1" title="Very low">😔</button>
+          <button class="mood-btn" role="radio" aria-checked="false" data-mood="2" title="Low">🙁</button>
+          <button class="mood-btn" role="radio" aria-checked="false" data-mood="3" title="OK">😌</button>
+          <button class="mood-btn" role="radio" aria-checked="false" data-mood="4" title="Good">🙂</button>
+          <button class="mood-btn" role="radio" aria-checked="false" data-mood="5" title="Great">😀</button>
+        </div>
+      </section>
+    </section>
+
+    <section id="view-tools" class="view hidden" aria-labelledby="tools-title">
+      <h2 id="tools-title" class="sr-only">Wellness Tools</h2>
+
+      <section class="tool card" aria-labelledby="breath-title">
+        <h3 id="breath-title">Breathing Exercise (4-7-8)</h3>
+        <div id="breathing" class="breathing">
+          <div class="breath-circle" aria-hidden="true"></div>
+          <div id="breath-step" class="breath-step" aria-live="polite">Ready</div>
+          <button id="start-breath" class="primary">Start</button>
+        </div>
+      </section>
+
+      <section class="tool card" aria-labelledby="journal-title">
+        <h3 id="journal-title">Journaling</h3>
+        <label for="journal" class="sr-only">Journal entry</label>
+        <textarea id="journal" placeholder="Write freely..." rows="6" aria-describedby="journal-help"></textarea>
+        <div class="row">
+          <span id="journal-help" class="muted">Private to you. Saves locally; if signed in, attempts secure save.</span>
+          <span id="journal-count" class="muted">0/1000</span>
+        </div>
+        <button id="save-journal" class="secondary">Save</button>
+        <div id="journal-status" class="status" aria-live="polite"></div>
+      </section>
+    </section>
+
+    <section id="view-wrap" class="view hidden" aria-labelledby="wrap-title">
+      <h2 id="wrap-title" class="sr-only">Wellness Wrap</h2>
+      <div class="grid">
+        <section class="card" aria-labelledby="score-title">
+          <h3 id="score-title">Wellness Score</h3>
+          <div id="wrap-score" class="score">82</div>
+          <div class="muted">Based on recent mood check-ins and journaling</div>
+        </section>
+        <section class="card" aria-labelledby="trend-title">
+          <h3 id="trend-title">Mood Trend (7 days)</h3>
+          <canvas id="trend-canvas" height="120" aria-label="Mood trend chart"></canvas>
+        </section>
+        <section class="card" aria-labelledby="metrics-title">
+          <h3 id="metrics-title">Metrics</h3>
+          <ul class="metrics">
+            <li><strong id="metric-checkins">0</strong> mood check-ins</li>
+            <li><strong id="metric-journal">0</strong> journal entries</li>
+            <li><strong id="metric-streak">0</strong> day streak</li>
+          </ul>
+        </section>
+        <section class="card" aria-labelledby="challenges-title">
+          <h3 id="challenges-title">Daily Challenges</h3>
+          <ul id="challenge-list" class="challenges"></ul>
+        </section>
+      </div>
+    </section>
+    <section id="view-community" class="view hidden" aria-labelledby="community-title">
+      <h2 id="community-title" class="sr-only">Anonymous Community</h2>
+      <section class="card" aria-label="Create post">
+        <label for="post-text" class="sr-only">Share something supportive</label>
+        <textarea id="post-text" rows="3" placeholder="Share encouragement, tips, or a win... (anonymous)"></textarea>
+        <div class="row">
+          <span class="muted">Please keep it kind and safe. No PII.</span>
+          <button id="post-button" class="primary">Post</button>
+        </div>
+      </section>
+      <section class="card" aria-label="Community feed">
+        <ul id="community-list" class="feed" role="list"></ul>
+      </section>
+    </section>
+  </main>
+
+  <dialog id="settings-dialog" class="settings">
+    <form method="dialog" class="card">
+      <h3>Settings</h3>
+      <div class="row">
+        <label for="text-size">Text size</label>
+        <select id="text-size">
+          <option value="1">Default</option>
+          <option value="1.1">Large</option>
+          <option value="1.25">Extra Large</option>
+        </select>
+      </div>
+      <div class="row">
+        <label><input type="checkbox" id="high-contrast" /> High contrast mode</label>
+      </div>
+      <div class="row">
+        <label><input type="checkbox" id="reduce-motion" /> Reduce motion</label>
+      </div>
+      <menu>
+        <button value="cancel" class="secondary">Close</button>
+        <button value="ok" class="primary" id="save-settings">Save</button>
+      </menu>
+    </form>
+  </dialog>
+
+  <script type="module" src="https://www.gstatic.com/firebasejs/10.12.4/firebase-app.js"></script>
+  <script type="module" src="https://www.gstatic.com/firebasejs/10.12.4/firebase-auth.js"></script>
+  <script src="main.js" type="module"></script>
+</body>
+</html>
