@@ -23,10 +23,10 @@
       <h1 class="brand">MindSpace</h1>
     </div>
     <nav aria-label="Primary">
-      <a href="#" id="nav-chat" class="active" role="link">Chat</a>
-      <a href="#" id="nav-tools" role="link">Wellness Tools</a>
-      <a href="#" id="nav-community" role="link">Community</a>
-      <a href="#" id="nav-wrap" role="link">Wellness Wrap</a>
+      <a href="#chat" id="nav-chat" class="active">Chat</a>
+      <a href="#tools" id="nav-tools">Wellness Tools</a>
+      <a href="#community" id="nav-community">Community</a>
+      <a href="#wrap" id="nav-wrap">Wellness Wrap</a>
     </nav>
     <div class="topbar-right">
       <div id="auth-status" class="auth">Not signed in</div>
@@ -133,6 +133,22 @@
       </section>
     </section>
   </main>
+
+  <dialog id="emergency" class="settings">
+    <form method="dialog" class="card">
+      <h3>Need urgent help?</h3>
+      <p class="muted">If you feel unsafe or in crisis, please contact your local emergency number or a crisis hotline.</p>
+      <ul class="challenges">
+        <li><a href="tel:988">US: 988 Suicide & Crisis Lifeline</a></li>
+        <li><a href="https://www.wikipedia.org/wiki/List_of_suicide_crisis_lines" target="_blank" rel="noopener noreferrer">Global hotlines</a></li>
+      </ul>
+      <menu>
+        <button value="close" class="primary">Close</button>
+      </menu>
+    </form>
+  </dialog>
+
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
 
   <dialog id="settings-dialog" class="settings">
     <form method="dialog" class="card">
